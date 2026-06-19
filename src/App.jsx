@@ -1,6 +1,8 @@
 import { useState } from "react";
 import InputForm from "./components/InputForm";
+import ProductList from "./components/ProductList";
 import RecommendationBox from "./components/RecommendationBox";
+import products from "./data/products";
 import { getRecommendations } from "./services/aiService";
 
 function App() {
@@ -16,7 +18,7 @@ function App() {
       setLoading(true);
       setError("");
 
-      const result = await getRecommendations(query);
+      const result = await getRecommendations(query, products);
       setRecommendation(result);
     } catch (err) {
       console.error(err);
@@ -25,6 +27,20 @@ function App() {
       setLoading(false);
     }
   };
+
+  // Extract recommended IDs from the text output to highlight items in the catalog
+  const recommendedIds = [];
+  if (typeof recommendation === "string") {
+    products.forEach((product) => {
+      // Check if the product name appears in the recommendation text (case insensitive)
+      const regex = new RegExp(product.name, "i");
+      if (regex.test(recommendation)) {
+        recommendedIds.push(product.id);
+      }
+    });
+  } else if (Array.isArray(recommendation)) {
+    recommendation.forEach((item) => recommendedIds.push(item.id));
+  }
 
   return (
     <div className="bg-[#FAF7F2] text-stone-800 min-h-screen flex flex-col items-center justify-start p-6 md:p-12 font-sans selection:bg-amber-100 selection:text-amber-900">
@@ -36,7 +52,7 @@ function App() {
             AI Product Recommender
           </h1>
           <p className="text-stone-600 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
-            Enter your preferences below to get personalized product recommendations instantly.
+            Enter your preferences below to match and find products strictly from our catalog of 10 items.
           </p>
         </header>
 
@@ -47,6 +63,11 @@ function App() {
             setQuery={setQuery}
             onSubmit={handleRecommendation}
           />
+        </section>
+
+        {/* Product List Section */}
+        <section className="p-6 rounded-2xl bg-white border border-stone-200/80 shadow-sm shadow-stone-100">
+          <ProductList products={products} recommendedIds={recommendedIds} />
         </section>
 
         {/* Recommendation Box Section */}
