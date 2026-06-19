@@ -21,7 +21,7 @@ function parseTextRecommendations(text) {
     if (!lineStr) return;
 
     // Check if the line starts a new recommendation block (e.g. "1. Product Name" or "• Product Name")
-    const numberedMatch = lineStr.match(/^(\d+)[\.\:\)\- ]+(.+)$/);
+    const numberedMatch = lineStr.match(/^(\d+)[\.\: ]+(.+)$/);
     const bulletMatch = lineStr.startsWith("•") ? lineStr.replace("•", "").trim() : null;
 
     if (numberedMatch || bulletMatch) {
@@ -105,7 +105,8 @@ function RecommendationBox({ recommendation, loading, error }) {
                   const validSpecs = rec.specs.filter(spec => spec.trim() && !spec.includes("---"));
                   
                   return (
-                    <div key={index} className="p-6 rounded-xl bg-white border border-stone-200 shadow-sm space-y-3">
+                    <div key={index} className="p-6 rounded-xl bg-white border border-stone-200 shadow-sm space-y-4">
+                      {/* Product Header */}
                       <div className="flex justify-between items-start gap-4 border-b border-stone-100 pb-2.5">
                         <h4 className="font-extrabold text-lg md:text-xl text-amber-900 leading-tight">
                           {index + 1}. {rec.name}
@@ -114,13 +115,17 @@ function RecommendationBox({ recommendation, loading, error }) {
                           {rec.price || "N/A"}
                         </span>
                       </div>
+                      
+                      {/* Reason Description */}
                       {rec.reason && (
                         <p className="text-sm text-stone-700 leading-relaxed">
                           <strong className="text-stone-500 font-semibold mr-1">Reason:</strong> {rec.reason}
                         </p>
                       )}
+                      
+                      {/* Specifications List */}
                       {validSpecs.length > 0 && (
-                        <div className="pt-2 space-y-1">
+                        <div className="pt-1 space-y-1">
                           <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">Key Specifications</span>
                           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-stone-600 bg-stone-50/50 p-3 rounded-lg border border-stone-100">
                             {validSpecs.map((spec, sIndex) => (
@@ -132,6 +137,56 @@ function RecommendationBox({ recommendation, loading, error }) {
                           </ul>
                         </div>
                       )}
+
+                      {/* Store Links with Logos */}
+                      <div className="pt-3 border-t border-stone-100/80 flex flex-wrap items-center gap-3">
+                        <span className="text-xs font-bold text-stone-400 uppercase tracking-wider mr-1">Shop:</span>
+                        
+                        {/* Amazon India Link */}
+                        <a 
+                          href={`https://www.amazon.in/s?k=${encodeURIComponent(rec.name)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100/80 border border-amber-200 text-amber-800 text-xs font-bold transition-all shadow-sm hover:scale-[1.02]"
+                        >
+                          {/* Amazon Shopping Cart SVG Icon */}
+                          <svg className="w-4 h-4 fill-amber-600" viewBox="0 0 24 24">
+                            <path d="M17.21 9l-4.38-4.38a.996.996 0 1 0-1.41 1.41L15.04 9.6c.38.38.38 1.02 0 1.41l-3.62 3.62a.996.996 0 1 0 1.41 1.41L17.21 11c.54-.54.54-1.42 0-2zm-6.61.6a.996.996 0 1 0-1.41-1.41L4.79 12.6c-.54.54-.54 1.42 0 1.95l4.38 4.38a.996.996 0 1 0 1.41-1.41L6.96 14.4c-.38-.38-.38-1.02 0-1.41l3.64-3.39z"/>
+                          </svg>
+                          Amazon
+                        </a>
+
+                        {/* Flipkart Link */}
+                        <a 
+                          href={`https://www.flipkart.com/search?q=${encodeURIComponent(rec.name)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100/80 border border-blue-200 text-blue-800 text-xs font-bold transition-all shadow-sm hover:scale-[1.02]"
+                        >
+                          {/* Flipkart Bag SVG Icon */}
+                          <svg className="w-4 h-4 fill-blue-600" viewBox="0 0 24 24">
+                            <path d="M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm7 17H5V8h14v12z"/>
+                          </svg>
+                          Flipkart
+                        </a>
+
+                        {/* Brand Official Website (via Google search) */}
+                        <a 
+                          href={`https://www.google.com/search?q=${encodeURIComponent(rec.name + ' official store')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 text-xs font-bold transition-all shadow-sm hover:scale-[1.02]"
+                        >
+                          {/* Globe/Official Website SVG Icon */}
+                          <svg className="w-4 h-4 text-stone-500 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                            <path d="M2 12h20"/>
+                          </svg>
+                          Official Site
+                        </a>
+                      </div>
+
                     </div>
                   );
                 })}

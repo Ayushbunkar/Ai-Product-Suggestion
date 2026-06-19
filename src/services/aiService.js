@@ -2,12 +2,28 @@ import axios from "axios";
 
 // Define the API function to fetch product recommendations from the broader market using Mistral AI.
 export const getRecommendations = async (userPreference) => {
-  // Retrieve the Mistral API key from Vite environment variables (defined in .env).
-  const apiKey = import.meta.env.VITE_MISTRAL_API_KEY || localStorage.getItem("mistral_api_key");
+  // 1. Retrieve the API key from Vite env variables or localStorage
+  let apiKey = import.meta.env.VITE_MISTRAL_API_KEY || localStorage.getItem("mistral_api_key");
 
-  // Throw an error if the API key is not configured.
+  // 2. If missing (often due to Vite terminal working directory mismatch on localhost), 
+  //    silently prompt the user to input the key in browser. This will only run on localhost.
   if (!apiKey || apiKey === "your_mistral_api_key_here") {
-    throw new Error("Mistral API Key is missing. Please add your VITE_MISTRAL_API_KEY to the .env file.");
+    if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+      const userKey = window.prompt(
+        "Mistral API Key not found in .env file. Please paste your Mistral API Key here to test on localhost (it will be saved locally):"
+      );
+      if (userKey && userKey.trim()) {
+        apiKey = userKey.trim();
+        localStorage.setItem("mistral_api_key", apiKey);
+      }
+    }
+  }
+
+  // 3. Throw an error if the API key is still missing.
+  if (!apiKey || apiKey === "your_mistral_api_key_here") {
+    throw new Error(
+      "Mistral API Key is missing. Please set the VITE_MISTRAL_API_KEY environment variable on your server/Vercel, or set up a local .env file."
+    );
   }
 
   // Construct the API endpoint URL for Mistral Chat Completions.
