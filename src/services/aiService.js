@@ -25,7 +25,7 @@ Instructions:
 
 1. Carefully analyze the user's requirements.
 
-2. Recommend up to 5 actual products available in the market.
+2. Recommend exactly 5 actual products available in the market. Do not recommend fewer than 5 products.
 
 3. If the user specifies a budget, stay within that budget.
 
@@ -43,11 +43,11 @@ Instructions:
 
 8. Keep explanations and spec descriptions concise. Do not leave the specifications section empty.
 
-9. Return the response in a clean numbered list format (1., 2., 3., 4., 5.). Do not use markdown bold formatting, double asterisks (**), or any other formatting characters anywhere in the response.
+9. Return the response in a clean numbered list format of exactly 5 products (1., 2., 3., 4., 5.). Do not use markdown bold formatting, double asterisks (**), or any other formatting characters anywhere in the response.
 
 10. Never reply with "No matching products found" unless the request is impossible.
 
-11. If no exact match exists, suggest the closest alternatives.
+11. If no exact match exists, suggest the closest alternatives to fulfill the 5 recommendations limit.
 
 12. Keep the response concise, professional and user-friendly.
 
@@ -61,7 +61,9 @@ Key Specs:
   - Storage: [value]
   - Processor: [value]
   - Battery/Display: [value]
------------------------------------`;
+-----------------------------------
+2. Product Name
+... (continue up to 5) ...`;
 
   try {
     // Perform the POST request to the Mistral AI API using Axios.

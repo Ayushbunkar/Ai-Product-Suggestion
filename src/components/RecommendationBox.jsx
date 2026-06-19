@@ -3,6 +3,7 @@ import React from "react";
 /**
  * Parses the raw text recommendations returned by Mistral AI.
  * Converts the custom numbered list format (1., 2., etc.) into structured objects for premium UI rendering.
+ * Operates line-by-line to avoid issues with varying divider lengths.
  * 
  * @param {string} text - Raw text from Mistral AI
  * @returns {Array} - Array of recommendation objects
@@ -10,60 +11,56 @@ import React from "react";
 function parseTextRecommendations(text) {
   if (!text || typeof text !== "string") return [];
   
-  // Split the response by the dashed line separator defined in the prompt format
-  const blocks = text.split(/-----------------------------------/);
-  
+  const lines = text.split("\n");
   const list = [];
-  blocks.forEach((block) => {
-    const trimmed = block.trim();
-    if (!trimmed) return;
-    
-    const lines = trimmed.split("\n");
-    let name = "";
-    let price = "";
-    let reason = "";
-    const specs = [];
-    let parsingSpecs = false;
+  let currentItem = null;
+  let parsingSpecs = false;
 
-    lines.forEach((line) => {
-      const lineStr = line.trim();
-      if (!lineStr) return;
+  lines.forEach((line) => {
+    const lineStr = line.trim();
+    if (!lineStr) return;
 
-      // Detect product name line (starts with bullet point • or a number like 1. or 2.)
-      if (lineStr.startsWith("•")) {
-        name = lineStr.replace("•", "").trim();
-      } else if (/^\d+[\.\: ]/.test(lineStr)) {
-        // Strip out the leading number prefix (e.g., "1. Product Name" -> "Product Name")
-        name = lineStr.replace(/^\d+[\.\:\)\- ]+/, "").trim();
-      } 
-      // Detect estimated price line
-      else if (lineStr.toLowerCase().startsWith("estimated price:")) {
-        price = lineStr.replace(/estimated price:/i, "").trim();
-      } 
-      // Detect reason line
-      else if (lineStr.toLowerCase().startsWith("reason:")) {
-        reason = lineStr.replace(/reason:/i, "").trim();
-      } 
-      // Detect specs section header
-      else if (lineStr.toLowerCase().startsWith("key specs:")) {
-        parsingSpecs = true;
-      } 
-      // Add specs lines, avoiding divider lines
-      else if (parsingSpecs) {
-        if (!lineStr.includes("---") && !lineStr.includes("___")) {
-          specs.push(lineStr);
-        }
-      } 
-      // Fallback for first line if prefix indicators are missing
-      else if (!name && !price && !reason && specs.length === 0) {
-        name = lineStr;
+    // Check if the line starts a new recommendation block (e.g. "1. Product Name" or "• Product Name")
+    const numberedMatch = lineStr.match(/^(\d+)[\.\:\)\- ]+(.+)$/);
+    const bulletMatch = lineStr.startsWith("•") ? lineStr.replace("•", "").trim() : null;
+
+    if (numberedMatch || bulletMatch) {
+      // Save the previous item before starting the new one
+      if (currentItem) {
+        list.push(currentItem);
       }
-    });
-
-    if (name) {
-      list.push({ name, price, reason, specs });
+      
+      // Initialize a new recommendation item
+      const rawName = numberedMatch ? numberedMatch[2].trim() : bulletMatch;
+      currentItem = {
+        name: rawName.replace(/\*\*/g, "").trim(), // Strip any bold asterisks
+        price: "",
+        reason: "",
+        specs: []
+      };
+      parsingSpecs = false; // Reset specs flag for the new item
+    } 
+    // Parse properties for the active item
+    else if (currentItem) {
+      if (lineStr.toLowerCase().startsWith("estimated price:")) {
+        currentItem.price = lineStr.replace(/estimated price:/i, "").trim();
+      } else if (lineStr.toLowerCase().startsWith("reason:")) {
+        currentItem.reason = lineStr.replace(/reason:/i, "").trim();
+      } else if (lineStr.toLowerCase().startsWith("key specs:")) {
+        parsingSpecs = true;
+      } else if (parsingSpecs) {
+        // Collect specification lines, filtering out dashes and dividers
+        if (!lineStr.includes("---") && !lineStr.includes("___")) {
+          currentItem.specs.push(lineStr);
+        }
+      }
     }
   });
+
+  // Push the final item after the loop terminates
+  if (currentItem) {
+    list.push(currentItem);
+  }
 
   return list;
 }
@@ -114,7 +111,7 @@ function RecommendationBox({ recommendation, loading, error }) {
                           {index + 1}. {rec.name}
                         </h4>
                         <span className="font-extrabold text-sm md:text-base text-amber-700 bg-amber-50 px-3 py-1 rounded-lg border border-amber-100/50 shrink-0">
-                          {rec.price}
+                          {rec.price || "N/A"}
                         </span>
                       </div>
                       {rec.reason && (
@@ -129,7 +126,7 @@ function RecommendationBox({ recommendation, loading, error }) {
                             {validSpecs.map((spec, sIndex) => (
                               <li key={sIndex} className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
-                                <span>{spec.replace(/^-/i, "").trim()}</span>
+                                <span>{spec.replace(/^[-•*]/i, "").trim()}</span>
                               </li>
                             ))}
                           </ul>
